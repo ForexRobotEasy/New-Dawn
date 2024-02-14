@@ -1,0 +1,123 @@
+
+// New Dawn Forex Expert Advisor
+// Developer: Forex Robot Easy Team
+// Developer's site: forexroboteasy.com
+
+#property strict
+
+// Define input parameters
+input double LotSize = 0.01;               // Trading lot size
+input int GridDistance = 20;               // Distance between grid orders in pips
+input double StopLoss = 50;                // Stop loss in pips
+input double TakeProfit = 100;             // Take profit in pips
+input double MaxDrawdown = 100;            // Maximum allowed drawdown in account currency
+
+// Define global variables
+int totalOrders = 0;                       // Total number of open orders
+
+// Define order structure
+struct SOrder {
+   double price;                           // Order price
+   double stopLoss;                        // Stop loss level
+   double takeProfit;                      // Take profit level
+};
+
+// Define order grids for each currency pair
+SOrder grid1[];
+SOrder grid2[];
+
+// Initialize the Expert Advisor
+void OnInit()
+{
+   // Set up the order grids for two currency pairs
+   for(int i=0; i<10; i++)
+   {
+      SOrder order1;
+      order1.price = i * GridDistance;
+      order1.stopLoss = order1.price - StopLoss;
+      order1.takeProfit = order1.price + TakeProfit;
+      grid1[i] = order1;
+      
+      SOrder order2;
+      order2.price = i * GridDistance;
+      order2.stopLoss = order2.price - StopLoss;
+      order2.takeProfit = order2.price + TakeProfit;
+      grid2[i] = order2;
+   }
+   
+   // Print the order grids for verification
+   Print('Order Grid 1:');
+   for(int i=0; i<10; i++)
+   {
+      Print('Order ', i+1, ': Price=', grid1[i].price, ' SL=', grid1[i].stopLoss, ' TP=', grid1[i].takeProfit);
+   }
+   
+   Print('Order Grid 2:');
+   for(int i=0; i<10; i++)
+   {
+      Print('Order ', i+1, ': Price=', grid2[i].price, ' SL=', grid2[i].stopLoss, ' TP=', grid2[i].takeProfit);
+   }
+}
+
+// Execute trading operations
+void OnTick()
+{
+   // Check if the maximum drawdown has been reached
+   if (AccountInfoDouble(ACCOUNT_EQUITY) - AccountInfoDouble(ACCOUNT_MARGIN) <= MaxDrawdown)
+   {
+      // Close all open orders
+      for(int i=0; i<totalOrders; i++)
+      {
+         if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+         {
+            if (OrderSymbol() == 'CurrencyPair1' || OrderSymbol() == 'CurrencyPair2')
+            {
+               OrderClose(OrderTicket(), OrderLots(), Bid, 10, clrRed);
+            }
+         }
+      }
+   }
+   
+   // Place new orders based on impulse filter
+   if (IsImpulseFilterPassed())
+   {
+      // Place orders for currency pair 1
+      for(int i=0; i<10; i++)
+      {
+         if (grid1[i].price > Ask)
+         {
+            if (OrderSend('CurrencyPair1', OP_BUY, LotSize, grid1[i].price, 10, grid1[i].stopLoss, grid1[i].takeProfit, 'New Dawn', 0, 0, clrGreen))
+            {
+               totalOrders++;
+               break;
+            }
+         }
+      }
+      
+      // Place orders for currency pair 2
+      for(int i=0; i<10; i++)
+      {
+         if (grid2[i].price > Ask)
+         {
+            if (OrderSend('CurrencyPair2', OP_BUY, LotSize, grid2[i].price, 10, grid2[i].stopLoss, grid2[i].takeProfit, 'New Dawn', 0, 0, clrGreen))
+            {
+               totalOrders++;
+               break;
+            }
+         }
+      }
+   }
+}
+
+// Check if impulse filter is passed
+bool IsImpulseFilterPassed()
+{
+   // Implement impulse filter logic here
+   return true;
+}
+
+// Logical conclusion of the code
+void OnDeinit(const int reason)
+{
+   Print('New Dawn Forex Expert Advisor has been stopped.');
+}
